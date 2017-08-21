@@ -172,7 +172,6 @@ export class TimelionDatasource {
 
     options.queries = _.map(queries, q => {
         if (adHoc.name !== null) {
-          console.log("Try to replace filter $" + adHoc.name);
             let filterStr = buildAdhocString(adHoc);
 
             for (let s in q.sheet) {
