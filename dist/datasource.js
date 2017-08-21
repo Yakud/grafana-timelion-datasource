@@ -39,7 +39,7 @@ System.register(["lodash"], function (_export, _context) {
           _classCallCheck(this, TimelionDatasource);
 
           this.instanceSettings = instanceSettings;
-          this.esVersion = this.instanceSettings.esVersion || "5.3.0";
+          this.esVersion = this.instanceSettings.esVersion || "5.5.0";
           this.type = instanceSettings.type;
           this.url = instanceSettings.url;
           this.name = instanceSettings.name;
@@ -163,6 +163,37 @@ System.register(["lodash"], function (_export, _context) {
               return target.target !== 'select metric' && !target.hide;
             });
 
+            var adHoc = {
+              name: null,
+              conditions: []
+            };
+            var buildAdhocString = function buildAdhocString(adHoc) {
+              var strParts = [];
+              for (var c in adHoc.conditions) {
+                for (var v in adHoc.conditions[c]) {
+                  if (adHoc.conditions[c][v].indexOf(' ') > -1) {
+                    strParts.push(v + ":\"" + adHoc.conditions[c][v] + "\"");
+                  } else {
+                    strParts.push(v + ":" + adHoc.conditions[c][v]);
+                  }
+                }
+              }
+
+              return strParts.join(" AND ");
+            };
+
+            for (var v in this.templateSrv.variables) {
+              var f = this.templateSrv.variables[v];
+              if (f.type == "adhoc") {
+                adHoc.name = f.name;
+                for (var vv in f.filters) {
+                  var condition = {};
+                  condition[f.filters[vv].key] = f.filters[vv].value;
+                  adHoc.conditions.push(condition);
+                }
+              }
+            }
+
             var queryTpl = { "sheet": null,
               "time": {
                 "from": options.range.from.format("YYYY-MM-DDTHH:mm:ss ZZ"),
@@ -200,7 +231,20 @@ System.register(["lodash"], function (_export, _context) {
                 })
               };
             });
+
             options.queries = _.map(queries, function (q) {
+              if (adHoc.name !== null) {
+                console.log("Try to replace filter $" + adHoc.name);
+                var filterStr = buildAdhocString(adHoc);
+
+                for (var s in q.sheet) {
+                  q.sheet[s] = q.sheet[s].replace("$" + adHoc.name, filterStr);
+                  q.sheet[s] = q.sheet[s].replace("[[" + adHoc.name + "]]", filterStr);
+                }
+
+                console.log(q.sheet);
+              }
+
               queryTpl.sheet = q.sheet;
               queryTpl.time.interval = !q.interval || q.interval === 'undefined' ? 'auto' : q.interval;
               return _.cloneDeep(queryTpl);
