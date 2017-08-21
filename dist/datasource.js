@@ -170,16 +170,19 @@ System.register(["lodash"], function (_export, _context) {
             var buildAdhocString = function buildAdhocString(adHoc) {
               var strParts = [];
               for (var c in adHoc.conditions) {
-                for (var v in adHoc.conditions[c]) {
-                  if (adHoc.conditions[c][v].indexOf(' ') > -1) {
-                    strParts.push(v + ":\"" + adHoc.conditions[c][v] + "\"");
-                  } else {
-                    strParts.push(v + ":" + adHoc.conditions[c][v]);
-                  }
+                var cond = adHoc.conditions[c].condition;
+                if (cond == "" && c < adHoc.conditions.length - 1) {
+                  cond = "AND";
+                }
+
+                if (adHoc.conditions[c].value.indexOf(' ') > -1) {
+                  strParts.push(adHoc.conditions[c].key + adHoc.conditions[c].operator + "\"" + adHoc.conditions[c].value + "\" " + cond);
+                } else {
+                  strParts.push(adHoc.conditions[c].key + adHoc.conditions[c].operator + adHoc.conditions[c].value + " " + cond);
                 }
               }
 
-              return strParts.join(" AND ");
+              return strParts.join(" ");
             };
 
             for (var v in this.templateSrv.variables) {
@@ -188,7 +191,29 @@ System.register(["lodash"], function (_export, _context) {
                 adHoc.name = f.name;
                 for (var vv in f.filters) {
                   var condition = {};
-                  condition[f.filters[vv].key] = f.filters[vv].value;
+                  condition.key = f.filters[vv].key;
+                  condition.value = f.filters[vv].value;
+
+                  if (f.filters[vv].condition !== undefined) {
+                    condition.condition = f.filters[vv].condition;
+                  } else {
+                    condition.condition = "";
+                  }
+
+                  switch (f.filters[vv].operator) {
+                    case "=":
+                      condition.operator = ":";
+                      break;
+
+                    case "!=":
+                      condition.key = "-" + condition.key;
+                      condition.operator = ":";
+                      break;
+
+                    default:
+                      condition.operator = ":";
+                  }
+
                   adHoc.conditions.push(condition);
                 }
               }

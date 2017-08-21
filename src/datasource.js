@@ -115,15 +115,19 @@ export class TimelionDatasource {
     let buildAdhocString = function(adHoc) {
       let strParts = [];
       for (let c in adHoc.conditions) {
-        for (let v in adHoc.conditions[c])
-          if (adHoc.conditions[c][v].indexOf(' ') > -1) {
-            strParts.push(v + ":\"" + adHoc.conditions[c][v] + "\"")
-          } else {
-            strParts.push(v + ":" + adHoc.conditions[c][v])
-          }
+        let cond = adHoc.conditions[c].condition;
+        if (cond == "" && c < adHoc.conditions.length - 1) {
+            cond = "AND";
+        }
+
+        if (adHoc.conditions[c].value.indexOf(' ') > -1) {
+            strParts.push(adHoc.conditions[c].key + adHoc.conditions[c].operator + "\"" + adHoc.conditions[c].value + "\" " + cond)
+        } else {
+            strParts.push(adHoc.conditions[c].key + adHoc.conditions[c].operator + adHoc.conditions[c].value + " " + cond)
+        }
       }
 
-      return strParts.join(" AND ")
+      return strParts.join(" ")
     };
 
     for (let v in this.templateSrv.variables) {
@@ -132,7 +136,30 @@ export class TimelionDatasource {
         adHoc.name = f.name;
         for (let vv in f.filters) {
             let condition = {};
-            condition[f.filters[vv].key] = f.filters[vv].value;
+            condition.key = f.filters[vv].key;
+            condition.value = f.filters[vv].value;
+
+            if (f.filters[vv].condition !== undefined) {
+              condition.condition = f.filters[vv].condition;
+            } else {
+              condition.condition = "";
+            }
+
+            switch (f.filters[vv].operator) {
+                case "=":
+                  condition.operator = ":";
+                  break;
+
+                case "!=":
+                    condition.key = "-" + condition.key;
+                    condition.operator = ":";
+                    break;
+
+                default:
+                  condition.operator = ":";
+            }
+
+
             adHoc.conditions.push(condition)
         }
       }
