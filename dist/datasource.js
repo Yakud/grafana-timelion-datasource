@@ -234,15 +234,20 @@ System.register(["lodash"], function (_export, _context) {
 
             options.queries = _.map(queries, function (q) {
               if (adHoc.name !== null) {
-                console.log("Try to replace filter $" + adHoc.name);
                 var filterStr = buildAdhocString(adHoc);
 
                 for (var s in q.sheet) {
+                  if (filterStr.length > 0) {
+                    q.sheet[s] = q.sheet[s].replace("AND_$" + adHoc.name, "AND " + filterStr);
+                    q.sheet[s] = q.sheet[s].replace("AND_[[" + adHoc.name + "]]", "AND " + filterStr);
+                  } else {
+                    q.sheet[s] = q.sheet[s].replace("AND_$" + adHoc.name, "");
+                    q.sheet[s] = q.sheet[s].replace("AND_[[" + adHoc.name + "]]", "");
+                  }
+
                   q.sheet[s] = q.sheet[s].replace("$" + adHoc.name, filterStr);
                   q.sheet[s] = q.sheet[s].replace("[[" + adHoc.name + "]]", filterStr);
                 }
-
-                console.log(q.sheet);
               }
 
               queryTpl.sheet = q.sheet;
