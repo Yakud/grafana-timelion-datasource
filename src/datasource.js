@@ -175,11 +175,17 @@ export class TimelionDatasource {
             let filterStr = buildAdhocString(adHoc);
 
             for (let s in q.sheet) {
-                q.sheet[s] = q.sheet[s].replace("$" + adHoc.name, filterStr);
-                q.sheet[s] = q.sheet[s].replace("[[" + adHoc.name + "]]", filterStr);
-            }
+              if (filterStr.length > 0) {
+                q.sheet[s] = q.sheet[s].replace("AND_$" + adHoc.name, "AND " + filterStr);
+                q.sheet[s] = q.sheet[s].replace("AND_[[" + adHoc.name + "]]", "AND " + filterStr);
+              } else {
+                  q.sheet[s] = q.sheet[s].replace("AND_$" + adHoc.name, "");
+                  q.sheet[s] = q.sheet[s].replace("AND_[[" + adHoc.name + "]]", "");
+              }
 
-            console.log(q.sheet);
+              q.sheet[s] = q.sheet[s].replace("$" + adHoc.name, filterStr);
+              q.sheet[s] = q.sheet[s].replace("[[" + adHoc.name + "]]", filterStr);
+            }
         }
 
         queryTpl.sheet = q.sheet;
